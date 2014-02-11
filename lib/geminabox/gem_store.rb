@@ -3,9 +3,24 @@ module Geminabox
   class GemStore
     attr_accessor :gem, :overwrite
 
-    def self.create(gem, overwrite = false)
-      gem_store = new(gem, overwrite)
-      gem_store.save
+    class << self
+      def prepare!
+        allocate.tap {|gem_store|
+          gem_store.prepare_data_folders
+          Geminabox::Server.reindex
+        }
+      end
+
+      def prepared?
+        return true if @prepared
+        gems_path = File.join(Geminabox.data, 'gems')
+        @prepared = File.directory?(gems_path) && File.writable?(gems_path)
+      end
+
+      def create(gem, overwrite = false)
+        gem_store = new(gem, overwrite)
+        gem_store.save
+      end
     end
 
     def initialize(gem, overwrite = false)
@@ -13,9 +28,13 @@ module Geminabox
       @overwrite = overwrite && overwrite == 'true'
     end
 
+    def prepared?
+      self.class.prepared?
+    end
+
     def save
       ensure_gem_valid
-      prepare_data_folders
+      prepare_data_folders unless prepared?
       check_replacement_status
       write_and_index
     end

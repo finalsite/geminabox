@@ -26,6 +26,26 @@ module Geminabox
     end
 
     class << self
+      def call(*args)
+        first_run!
+        super
+      end
+
+      def run!(*args, &block)
+        first_run!
+        super
+      end
+
+      def first_run!
+        return true unless @first_run.nil?
+        # make sure we have at least a rudimentary
+        # repository setup to start with
+        synchronize {
+          GemStore.prepare! unless GemStore.prepared?
+          @first_run = :done
+        }
+      end
+
       def disallow_replace?
         ! allow_replace
       end
