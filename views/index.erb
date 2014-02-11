@@ -15,8 +15,15 @@
   <ul class="gemlist">
 
     <% @gems.by_name do |name, versions| %>
+      <% newest_gem = versions.newest %>
+      <% spec = spec_for(name, newest_gem.number, newest_gem.platform) %>
+
       <li <%= %{id="jump_#{name[0..0].downcase}"} if @index_gems.delete(name[0..0].downcase) %> class="gem-version">
+        <% if spec %>
+        <h2><a href="<%= spec.homepage %>"><%= name %></a> (<%= versions.count == 1 ? versions.first.number : "#{versions.oldest.number} - #{versions.newest.number}" %>)</h2>
+        <% else %>
         <h2><%= name %> (<%= versions.count == 1 ? versions.first.number : "#{versions.oldest.number} - #{versions.newest.number}" %>)</h2>
+        <% end %>
         <% versions.each.reverse_each.first(5).each do |version| %>
           <p>
             <code>gem install <%= version.name %> <%= "--prerelease" if version.number.to_s.match(/[a-z]/i) %> -v "<%= version.number %>"</code>
@@ -37,12 +44,10 @@
 
         <div class="details">
           <p>
-            <% newest_gem = versions.newest %>
-            <% if spec = spec_for(name, newest_gem.number, newest_gem.platform) %>
-              <%= spec.description %>
+            <% if spec %>
+              <span class="description"><%= spec.description %></span>
               <br/>
-              <a href="<%= spec.homepage %>">Homepage</a><br />
-              <span class="author">– <%= spec.authors.zip(spec.email).map do |author, email|
+              <span class="author"> <%= spec.authors.zip([spec.email].compact).map do |author, email|
                 %Q{<a href="mailto:#{email}">#{author}</a>}
               end.join(', ') %></span>
             <% end %>
